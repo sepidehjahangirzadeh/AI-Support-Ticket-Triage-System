@@ -13,24 +13,23 @@ from app.core import settings
 
 
 class ElasticLogHandler(logging.Handler):
+    
     """
     Custom logging handler that writes
     application logs directly to Elasticsearch.
     """
 
     def __init__(self):
-
         super().__init__()
         self.client = Elasticsearch(settings.ELASTIC_HOST)
         self.index_name = ("application_logs")
 
     def emit(self, record,):
+
         """
         Send log record to Elasticsearch.
         """
-
         try:
-
             document = {
                 "timestamp": datetime.now(UTC).isoformat(),
                 "level": record.levelname,

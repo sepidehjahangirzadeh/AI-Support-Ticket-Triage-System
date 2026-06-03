@@ -1,0 +1,62 @@
+"""
+Support Triaging Engine
+
+Author: Sepideh Jahangirzadeh
+"""
+
+import logging
+import sys
+from datetime import datetime, UTC
+
+from elasticsearch import Elasticsearch
+from app.core import settings
+
+
+class ElasticLogHandler(logging.Handler):
+    """
+    Custom logging handler that writes
+    application logs directly to Elasticsearch.
+    """
+
+    def __init__(self):
+
+        super().__init__()
+        self.client = Elasticsearch(settings.ELASTIC_HOST)
+        self.index_name = ("application_logs")
+
+    def emit(self, record,):
+        """
+        Send log record to Elasticsearch.
+        """
+
+        try:
+
+            document = {
+                "timestamp": datetime.now(UTC).isoformat(),
+                "level": record.levelname,
+                "logger": record.name,
+                "message": record.getMessage(),}
+
+            if hasattr(record,"ticket_id",):
+                document["ticket_id"] = (record.ticket_id)
+
+            if hasattr(record, "source",):
+                document["source"] = (record.source)
+
+            if hasattr(record, "similarity",):
+                document["similarity"] = (record.similarity)
+
+            if hasattr(record, "operation",):
+                document["operation"] = (record.operation)
+
+            if hasattr(record,"latency_ms",):
+                document["latency_ms"] = (record.latency_ms)
+
+            self.client.index(index=self.index_name, document=document,)
+
+        except Exception as e:
+
+            sys.stderr.write(
+                f"[ElasticLogHandler] "
+                f"Failed to write log: "
+                f"{str(e)}\n" )
